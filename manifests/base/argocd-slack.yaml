@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-slack
+  labels:
+    liatr.io/notifications: slack
+data:
+  channelid: EXAMPLE
+  notifications: sync-succeeded,sync-failed
