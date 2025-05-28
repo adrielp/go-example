@@ -122,7 +122,7 @@ jobs:
       - uses: octo-sts/action@6177b4481c00308b3839969c3eca88c96a91775f
         id: octo-sts
         with:
-          scope: liatrio/go-reference-app
+          scope: adrielp/go-example
           identity: semantic-release
       - name: Run go-semantic-release
         uses: go-semantic-release/action@v1
