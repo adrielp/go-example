@@ -119,7 +119,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: octo-sts/action@6177b4481c00308b3839969c3eca88c96a91775f
+      - uses: octo-sts/action@210248e8ae1ae1550aa6e232c6f192b3ccbf7335
         id: octo-sts
         with:
           scope: liatrio/go-reference-app
