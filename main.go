@@ -64,7 +64,7 @@ func init() {
 	}()
 }
 
-func initResource() *sdkresource.Resource {
+func initResource() (*sdkresource.Resource, error) {
 	initResourcesOnce.Do(func() {
 		extraResources, err := sdkresource.New(
 			context.Background(),
@@ -87,7 +87,7 @@ func initResource() *sdkresource.Resource {
 	})
 
 	logger.Sugar().Info("resource sdk initialized")
-	return resource
+	return resource, nil
 }
 
 func initTracerProvider() *sdktrace.TracerProvider {
@@ -97,9 +97,15 @@ func initTracerProvider() *sdktrace.TracerProvider {
 	if err != nil {
 		logger.Sugar().Fatalf("new otlp trace grpc exporter failed: %v", err)
 	}
+
+	rs, err := initResource()
+	if err != nil {
+		logger.Sugar().Fatal("failed to init resource", zap.Error(err))
+	}
+
 	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exporter),
-		sdktrace.WithResource(initResource()),
+		sdktrace.WithResource(rs),
 	)
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
