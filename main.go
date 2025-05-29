@@ -8,6 +8,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"time"
 	"net/http"
 	"os"
 	"sync"
@@ -20,10 +21,14 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	// "go.opentelemetry.io/otel/propagation"
 	sdkresource "go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
+	sdkmetric"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/metric"
+	semconv "go.opentelemetry.io/otel/semconv/v1.32.0"
 )
 
 var (
@@ -31,6 +36,8 @@ var (
 	tracer            trace.Tracer
 	resource          *sdkresource.Resource
 	initResourcesOnce sync.Once
+	meter = otel.Meter("go-example")
+	apiCtr metric.Int64Counter
 )
 
 func init() {
@@ -62,55 +69,35 @@ func init() {
 			return
 		}
 	}()
-}
-
-func initResource() (*sdkresource.Resource, error) {
-	initResourcesOnce.Do(func() {
-		extraResources, err := sdkresource.New(
-			context.Background(),
-			sdkresource.WithOS(),
-			sdkresource.WithProcess(),
-			sdkresource.WithContainer(),
-			sdkresource.WithHost(),
-		)
-		if err != nil {
-			logger.Sugar().Fatalf("failed to initialize resource: %v", err)
-		}
-
-		resource, err = sdkresource.Merge(
-			sdkresource.Default(),
-			extraResources,
-		)
-		if err != nil {
-			logger.Sugar().Fatalf("failed to initialize resource: %v", err)
-		}
-	})
-
-	logger.Sugar().Info("resource sdk initialized")
-	return resource, nil
-}
-
-func initTracerProvider() *sdktrace.TracerProvider {
-	ctx := context.Background()
-
-	exporter, err := otlptracegrpc.New(ctx)
-	if err != nil {
-		logger.Sugar().Fatalf("new otlp trace grpc exporter failed: %v", err)
-	}
-
-	rs, err := initResource()
-	if err != nil {
-		logger.Sugar().Fatal("failed to init resource", zap.Error(err))
-	}
-
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exporter),
-		sdktrace.WithResource(rs),
+	apiCtr, err = meter.Int64Counter(
+		"api.gauge",
+		metric.WithDescription("Number of API calls."),
+		metric.WithUnit("{call}"),
 	)
-	otel.SetTracerProvider(tp)
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-	logger.Sugar().Infof("tracer provider initialized")
-	return tp
+	if err != nil {
+		panic(err)
+	}
+}
+
+func newTracerProvider(exp sdktrace.SpanExporter) *sdktrace.TracerProvider {
+	r := sdkresource.Default()
+
+	return sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exp),
+		sdktrace.WithResource(r),
+	)
+}
+
+func newMeterProvider(exp sdkmetric.Exporter) *sdkmetric.MeterProvider {
+	r := sdkresource.Default()
+
+	meterProvider := sdkmetric.NewMeterProvider(
+		sdkmetric.WithResource(r),
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exp,
+			// Default is 1m. Set to 3s for demonstrative purposes.
+			sdkmetric.WithInterval(3*time.Second))),
+	)
+	return meterProvider
 }
 
 func mustMapEnv(target *string, envKey string) {
@@ -127,17 +114,17 @@ type Response struct {
 
 func helloHandler(w http.ResponseWriter, r *http.Request) {
 	// Get the tracer context
-	ctx := r.Context()
-	_, span := tracer.Start(ctx, "helloHandler")
+	ctx, span := tracer.Start(r.Context(), "helloHandler")
 	defer span.End()
 
-	// span := trace.SpanFromContext(ctx)
 	span.SetAttributes(
 		attribute.String("custom", "hello"),
 	)
 
 	// Set response headers
 	w.Header().Set("Content-Type", "application/json")
+
+	apiCtr.Add(ctx, 1, metric.WithAttributes(semconv.HTTPResponseStatusCode(200)))
 
 	// Create response
 	response := Response{
@@ -157,10 +144,27 @@ func main() {
 	var port string
 	mustMapEnv(&port, "SERVICE_PORT")
 
+	ctx := context.Background()
+	tExporter, err := otlptracegrpc.New(ctx)
+	if err != nil {
+		logger.Fatal("failed to create new otlp exporter", zap.Error(err))
+	}
+
+	mExporter, err := otlpmetricgrpc.New(ctx)
+	if err != nil {
+		logger.Fatal("failed to create new otlp exporter", zap.Error(err))
+	}
+
+	mp := newMeterProvider(mExporter)
+
+	// Super important. Without this being set, the meter will not register and
+	// metrics will not be actually sent.
+	otel.SetMeterProvider(mp)
+
 	// Initialize the OTEL TracerProvider
-	tp := initTracerProvider()
+	tp := newTracerProvider(tExporter)
 	defer func() {
-		if err := tp.Shutdown(context.Background()); err != nil {
+		if err := tp.Shutdown(ctx); err != nil {
 			logger.Sugar().Fatalf("failed to shutdown tracer provider: %v", err)
 		}
 	}()
