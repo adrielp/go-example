@@ -8,10 +8,9 @@ import (
 
 	"go.uber.org/zap"
 
-	"time"
 	"net/http"
 	"os"
-	"sync"
+	"time"
 
 	// Import your OTEL packages here for instrumentation.
 	// The default packages are for manual instrumentation, but you can use
@@ -20,23 +19,22 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+
 	// "go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/metric"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdkresource "go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/trace"
-	sdkmetric"go.opentelemetry.io/otel/sdk/metric"
-	"go.opentelemetry.io/otel/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.32.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var (
-	logger            *zap.Logger
-	tracer            trace.Tracer
-	resource          *sdkresource.Resource
-	initResourcesOnce sync.Once
-	meter = otel.Meter("go-example")
+	logger *zap.Logger
+	tracer trace.Tracer
+	meter  = otel.Meter("go-example")
 	apiCtr metric.Int64Counter
 )
 

@@ -7,8 +7,8 @@ package tools // import "github.com/adrielp/go-example/internal/tools"
 // https://go.dev/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module
 
 import (
-    _ "github.com/google/osv-scanner/cmd/osv-scanner"
 	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
+	_ "github.com/google/osv-scanner/cmd/osv-scanner"
 	_ "github.com/securego/gosec/v2/cmd/gosec"
 	_ "golang.org/x/tools/cmd/goimports"
 	_ "golang.org/x/vuln/cmd/govulncheck"
