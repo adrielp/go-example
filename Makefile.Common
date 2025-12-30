@@ -54,7 +54,7 @@ lint:
 .PHONY: tidy
 tidy:
 	-rm go.sum
-	go mod tidy -compat=1.22
+	go mod tidy -compat=1.24
 
 .PHONY: generate
 generate:

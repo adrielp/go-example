@@ -23,15 +23,15 @@ jobs:
     strategy:
       matrix:
         go:
-          - "1.23"
+          - "1.24"
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
           cache: false
@@ -63,7 +63,7 @@ jobs:
           - amd64
           - "386"
         go:
-          - "1.23"
+          - "1.24"
         exclude:
           - GOOS: darwin
             GOARCH: "386"
@@ -72,11 +72,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
           cache: false
@@ -93,22 +93,22 @@ jobs:
     strategy:
       matrix:
         go:
-          - "1.23"
+          - "1.24"
     name: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
           cache: false
       - name: Make test
         run: make test
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
   go-semantic-release:
     if: ${{ github.ref == 'refs/heads/main' }}
     needs:
@@ -119,10 +119,10 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: octo-sts/action@6177b4481c00308b3839969c3eca88c96a91775f
+      - uses: octo-sts/action@f603d3be9d8dd9871a265776e625a27b00effe05
         id: octo-sts
         with:
-          scope: liatrio/go-reference-app
+          scope: adrielp/go-example
           identity: semantic-release
       - name: Run go-semantic-release
         uses: go-semantic-release/action@v1
