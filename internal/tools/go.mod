@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/golangci/golangci-lint v1.62.0
-	github.com/google/osv-scanner v1.9.1
+	github.com/google/osv-scanner/v2 v2.5.1
 	github.com/securego/gosec/v2 v2.21.4
 	golang.org/x/tools v0.40.0
 	golang.org/x/vuln v1.1.3
