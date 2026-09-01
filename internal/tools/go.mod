@@ -7,7 +7,7 @@ require (
 	github.com/google/osv-scanner v1.9.1
 	github.com/securego/gosec/v2 v2.21.4
 	golang.org/x/tools v0.40.0
-	golang.org/x/vuln v1.1.3
+	golang.org/x/vuln v1.7.0
 	honnef.co/go/tools v0.5.1
 )
 
