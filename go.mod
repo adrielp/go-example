@@ -2,7 +2,7 @@ module github.com/adrielp/go-example
 
 go 1.24
 
-toolchain go1.24.2
+toolchain go1.27.1
 
 require (
 	go.opentelemetry.io/otel v1.36.0
